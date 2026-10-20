@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CalendarDays, Check, Clock3, X } from 'lucide-react'
-import { CATEGORIES, PRIORITIES, todayKey } from '../utils/tasks'
+import { CATEGORIES, PRIORITIES } from '../utils/tasks'
 
 const emptyTask = {
   title: '',
@@ -43,12 +43,6 @@ export default function TaskFormModal({ open, task, initialDate, onClose, onSave
     }
   }, [open, onClose])
 
-  const deadlineLabel = useMemo(() => {
-    if (!form.dueDate) return 'Set a date'
-    if (form.dueDate === todayKey()) return 'Today'
-    return new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(`${form.dueDate}T12:00:00`))
-  }, [form.dueDate])
-
   if (!open) return null
 
   const update = (field, value) => setForm((current) => ({ ...current, [field]: value }))
@@ -90,15 +84,13 @@ export default function TaskFormModal({ open, task, initialDate, onClose, onSave
             <div>
               <span className="label">Deadline <span className="font-normal text-slate-400">(optional)</span></span>
               <div className="grid grid-cols-[1fr_.8fr] gap-3">
-                <label className="field relative flex cursor-pointer items-center gap-2 overflow-hidden">
+                <label htmlFor="task-date" className="field flex cursor-pointer items-center gap-2 overflow-hidden px-3">
                   <CalendarDays size={17} className="accent-text shrink-0" />
-                  <span className="truncate text-sm">{deadlineLabel}</span>
-                  <input type="date" value={form.dueDate} onChange={(e) => update('dueDate', e.target.value)} className="absolute inset-0 cursor-pointer opacity-0" aria-label="Due date" />
+                  <input id="task-date" type="date" value={form.dueDate} onChange={(e) => update('dueDate', e.target.value)} onClick={(e) => { try { e.currentTarget.showPicker?.() } catch {} }} className="min-w-0 flex-1 cursor-pointer bg-transparent text-[13px] text-slate-800 outline-none [color-scheme:light] dark:text-slate-100 dark:[color-scheme:dark]" aria-label="Due date" />
                 </label>
-                <label className="field relative flex cursor-pointer items-center gap-2 overflow-hidden">
+                <label htmlFor="task-time" className={`field flex items-center gap-2 overflow-hidden px-3 ${!form.dueDate ? 'opacity-50' : 'cursor-pointer'}`}>
                   <Clock3 size={17} className="accent-text shrink-0" />
-                  <span className="truncate text-sm">{form.dueTime || 'Any time'}</span>
-                  <input type="time" value={form.dueTime} onChange={(e) => update('dueTime', e.target.value)} disabled={!form.dueDate} className="absolute inset-0 cursor-pointer opacity-0 disabled:cursor-not-allowed" aria-label="Due time" />
+                  <input id="task-time" type="time" value={form.dueTime} onChange={(e) => update('dueTime', e.target.value)} onClick={(e) => { try { e.currentTarget.showPicker?.() } catch {} }} disabled={!form.dueDate} className="min-w-0 flex-1 cursor-pointer bg-transparent text-[13px] text-slate-800 outline-none [color-scheme:light] disabled:cursor-not-allowed dark:text-slate-100 dark:[color-scheme:dark]" aria-label="Due time" />
                 </label>
               </div>
               {form.dueDate && <button type="button" onClick={() => setForm((current) => ({ ...current, dueDate: '', dueTime: '' }))} className="mt-2 text-xs font-semibold text-slate-400 hover:text-rose-500">Clear deadline</button>}
