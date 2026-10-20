@@ -4,4 +4,5 @@
     <string name="title_activity_main">Momentum</string>
     <string name="package_name">com.momentum.tasks</string>
     <string name="custom_url_scheme">com.momentum.tasks</string>
+    <string name="widget_description">Today’s pending Momentum tasks and completion progress</string>
 </resources>

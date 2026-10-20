@@ -1,4 +1,4 @@
-import { Check, Database, Download, Moon, Palette, ShieldCheck, Smartphone, Sun, Trash2, Upload } from 'lucide-react'
+import { AlarmClock, BatteryCharging, BellRing, Check, Database, Download, ExternalLink, Moon, Palette, ShieldCheck, Smartphone, Sun, Trash2, Upload } from 'lucide-react'
 import { useRef } from 'react'
 
 const accents = [
@@ -9,7 +9,7 @@ const accents = [
   { name: 'Amber', value: '#c77700', rgb: '199, 119, 0' }
 ]
 
-export default function SettingsView({ preferences, onPreferencesChange, taskCount, onExport, onImport, onClear }) {
+export default function SettingsView({ preferences, onPreferencesChange, taskCount, onExport, onImport, onClear, nativeAndroid = false, reminderStatus, onEnableNotifications, onEnableExactAlarm, onOpenAppSettings }) {
   const fileRef = useRef(null)
   return (
     <div className="animate-fade-up">
@@ -40,6 +40,40 @@ export default function SettingsView({ preferences, onPreferencesChange, taskCou
           </div>
         </div>
       </section>
+
+      {nativeAndroid && (
+        <section className="mt-7">
+          <SectionTitle icon={BellRing} title="Task reminders" />
+          <div className="card mt-3 overflow-hidden">
+            <StatusRow
+              icon={BellRing}
+              title="Notifications"
+              detail={reminderStatus?.notifications === 'granted' ? 'Allowed' : 'Permission needed'}
+              okay={reminderStatus?.notifications === 'granted'}
+              action={reminderStatus?.notifications === 'granted' ? null : onEnableNotifications}
+              actionLabel="Enable"
+            />
+            <StatusRow
+              icon={AlarmClock}
+              title="Precise alarms"
+              detail={reminderStatus?.exactAlarm === 'granted' ? 'On time' : 'May be delayed'}
+              okay={reminderStatus?.exactAlarm === 'granted'}
+              action={reminderStatus?.exactAlarm === 'granted' ? null : onEnableExactAlarm}
+              actionLabel="Settings"
+            />
+            <div className="border-t border-slate-100 p-4 dark:border-white/[.06]">
+              <div className="flex items-start gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 dark:bg-amber-400/10 dark:text-amber-300"><BatteryCharging size={19} /></span>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">Xiaomi reliability</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">In App info, allow notifications and Autostart, then set Battery saver to No restrictions. Avoid force-stopping Momentum.</p>
+                  <button onClick={onOpenAppSettings} className="accent-text mt-3 flex min-h-9 items-center gap-1.5 text-xs font-bold">Open app settings <ExternalLink size={13} /></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="mt-7">
         <SectionTitle icon={Database} title="Your data" />
@@ -79,4 +113,14 @@ function SectionTitle({ icon: Icon, title }) {
 
 function ThemeButton({ active, icon: Icon, label, onClick }) {
   return <button onClick={onClick} className={`flex min-h-12 items-center justify-center gap-2 rounded-2xl border text-sm font-semibold transition ${active ? 'accent-border accent-soft' : 'border-slate-200 text-slate-500 dark:border-white/[.08] dark:text-slate-400'}`}><Icon size={17} />{label}</button>
+}
+
+function StatusRow({ icon: Icon, title, detail, okay, action, actionLabel }) {
+  return (
+    <div className="flex min-h-[70px] items-center gap-3 border-b border-slate-100 px-4 dark:border-white/[.06]">
+      <span className={`flex h-10 w-10 items-center justify-center rounded-2xl ${okay ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-400/10 dark:text-emerald-300' : 'bg-amber-50 text-amber-600 dark:bg-amber-400/10 dark:text-amber-300'}`}><Icon size={19} /></span>
+      <span className="flex-1"><strong className="block text-sm text-slate-900 dark:text-white">{title}</strong><span className="text-xs text-slate-400">{detail}</span></span>
+      {action && <button onClick={action} className="accent-soft min-h-9 rounded-xl px-3 text-xs font-bold">{actionLabel}</button>}
+    </div>
+  )
 }

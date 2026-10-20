@@ -8,5 +8,11 @@
   "android": {
     "backgroundColor": "#f7f7fb",
     "allowMixedContent": false
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_momentum",
+      "iconColor": "#6d5dfc"
+    }
   }
 }

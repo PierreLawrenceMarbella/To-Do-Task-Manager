@@ -1,3 +1,5 @@
+import { normalizeReminder } from './reminders'
+
 export const CATEGORIES = ['Personal', 'School', 'Work', 'Others']
 export const PRIORITIES = ['Low', 'Medium', 'High']
 
@@ -44,6 +46,7 @@ export function normalizeImportedTask(task) {
     completed: Boolean(task.completed),
     completedAt: task.completed ? (task.completedAt || new Date().toISOString()) : null,
     createdAt: task.createdAt || new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    reminder: normalizeReminder(task.reminder)
   }
 }

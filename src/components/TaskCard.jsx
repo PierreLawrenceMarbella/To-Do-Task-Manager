@@ -1,5 +1,6 @@
-import { CalendarClock, Check, Clock3, Edit3, Trash2 } from 'lucide-react'
+import { BellRing, CalendarClock, Check, Clock3, Edit3, Trash2 } from 'lucide-react'
 import { formatDate, isOverdue } from '../utils/tasks'
+import { formatReminder } from '../utils/reminders'
 
 const categoryColors = {
   Personal: 'bg-violet-100 text-violet-700 dark:bg-violet-400/10 dark:text-violet-300',
@@ -42,6 +43,9 @@ export default function TaskCard({ task, onToggle, onEdit, onDelete, compact = f
                 {overdue ? <CalendarClock size={13} /> : <Clock3 size={13} />}
                 {formatDate(task.dueDate)}{task.dueTime ? ` · ${formatTime(task.dueTime)}` : ''}
               </span>
+            )}
+            {task.reminder && !task.completed && (
+              <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400"><BellRing size={13} />{formatReminder(task.reminder)}</span>
             )}
           </div>
         </div>

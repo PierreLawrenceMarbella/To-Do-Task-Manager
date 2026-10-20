@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { CalendarDays, Check, Clock3, X } from 'lucide-react'
+import { BellRing, CalendarDays, Check, Clock3, X } from 'lucide-react'
 import { CATEGORIES, PRIORITIES } from '../utils/tasks'
+import { REMINDER_OFFSETS, validateReminder } from '../utils/reminders'
 
 const emptyTask = {
   title: '',
@@ -8,12 +9,14 @@ const emptyTask = {
   dueDate: '',
   dueTime: '',
   priority: 'Medium',
-  category: 'Personal'
+  category: 'Personal',
+  reminder: null
 }
 
-export default function TaskFormModal({ open, task, initialDate, onClose, onSave }) {
+export default function TaskFormModal({ open, task, initialDate, onClose, onSave, nativeAndroid = false }) {
   const [form, setForm] = useState(emptyTask)
   const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
   const titleRef = useRef(null)
   const editing = Boolean(task)
 
@@ -25,9 +28,11 @@ export default function TaskFormModal({ open, task, initialDate, onClose, onSave
       dueDate: task.dueDate || '',
       dueTime: task.dueTime || '',
       priority: task.priority,
-      category: task.category
+      category: task.category,
+      reminder: task.reminder || null
     } : { ...emptyTask, dueDate: initialDate || '' })
     setError('')
+    setSaving(false)
     const timer = setTimeout(() => titleRef.current?.focus(), 120)
     return () => clearTimeout(timer)
   }, [open, task, initialDate])
@@ -45,8 +50,19 @@ export default function TaskFormModal({ open, task, initialDate, onClose, onSave
 
   if (!open) return null
 
-  const update = (field, value) => setForm((current) => ({ ...current, [field]: value }))
-  const submit = (event) => {
+  const update = (field, value) => {
+    setError('')
+    setForm((current) => ({ ...current, [field]: value }))
+  }
+  const updateDeadline = (field, value) => {
+    setError('')
+    setForm((current) => {
+    const next = { ...current, [field]: value }
+    if (!next.dueDate || !next.dueTime) next.reminder = null
+    return next
+    })
+  }
+  const submit = async (event) => {
     event.preventDefault()
     const title = form.title.trim()
     if (!title) {
@@ -54,7 +70,19 @@ export default function TaskFormModal({ open, task, initialDate, onClose, onSave
       titleRef.current?.focus()
       return
     }
-    onSave({ ...form, title, description: form.description.trim() })
+    const reminderValidation = validateReminder(form)
+    if (!reminderValidation.valid) {
+      setError(reminderValidation.message)
+      return
+    }
+    setSaving(true)
+    try {
+      await onSave({ ...form, title, description: form.description.trim() })
+    } catch {
+      setError('Could not save this task. Please try again.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -86,15 +114,50 @@ export default function TaskFormModal({ open, task, initialDate, onClose, onSave
               <div className="grid grid-cols-[1fr_.8fr] gap-3">
                 <label htmlFor="task-date" className="field flex cursor-pointer items-center gap-2 overflow-hidden px-3">
                   <CalendarDays size={17} className="accent-text shrink-0" />
-                  <input id="task-date" type="date" value={form.dueDate} onChange={(e) => update('dueDate', e.target.value)} onClick={(e) => { try { e.currentTarget.showPicker?.() } catch {} }} className="min-w-0 flex-1 cursor-pointer bg-transparent text-[13px] text-slate-800 outline-none [color-scheme:light] dark:text-slate-100 dark:[color-scheme:dark]" aria-label="Due date" />
+                  <input id="task-date" type="date" value={form.dueDate} onChange={(e) => updateDeadline('dueDate', e.target.value)} onClick={(e) => { try { e.currentTarget.showPicker?.() } catch {} }} className="min-w-0 flex-1 cursor-pointer bg-transparent text-[13px] text-slate-800 outline-none [color-scheme:light] dark:text-slate-100 dark:[color-scheme:dark]" aria-label="Due date" />
                 </label>
                 <label htmlFor="task-time" className={`field flex items-center gap-2 overflow-hidden px-3 ${!form.dueDate ? 'opacity-50' : 'cursor-pointer'}`}>
                   <Clock3 size={17} className="accent-text shrink-0" />
-                  <input id="task-time" type="time" value={form.dueTime} onChange={(e) => update('dueTime', e.target.value)} onClick={(e) => { try { e.currentTarget.showPicker?.() } catch {} }} disabled={!form.dueDate} className="min-w-0 flex-1 cursor-pointer bg-transparent text-[13px] text-slate-800 outline-none [color-scheme:light] disabled:cursor-not-allowed dark:text-slate-100 dark:[color-scheme:dark]" aria-label="Due time" />
+                  <input id="task-time" type="time" value={form.dueTime} onChange={(e) => updateDeadline('dueTime', e.target.value)} onClick={(e) => { try { e.currentTarget.showPicker?.() } catch {} }} disabled={!form.dueDate} className="min-w-0 flex-1 cursor-pointer bg-transparent text-[13px] text-slate-800 outline-none [color-scheme:light] disabled:cursor-not-allowed dark:text-slate-100 dark:[color-scheme:dark]" aria-label="Due time" />
                 </label>
               </div>
-              {form.dueDate && <button type="button" onClick={() => setForm((current) => ({ ...current, dueDate: '', dueTime: '' }))} className="mt-2 text-xs font-semibold text-slate-400 hover:text-rose-500">Clear deadline</button>}
+              {form.dueDate && <button type="button" onClick={() => setForm((current) => ({ ...current, dueDate: '', dueTime: '', reminder: null }))} className="mt-2 text-xs font-semibold text-slate-400 hover:text-rose-500">Clear deadline</button>}
             </div>
+
+            {nativeAndroid && (
+              <div>
+                <span className="label flex items-center gap-2"><BellRing size={15} className="accent-text" />Reminder</span>
+                <div className="grid grid-cols-3 gap-2">
+                  <ReminderButton active={!form.reminder} label="None" onClick={() => update('reminder', null)} />
+                  {REMINDER_OFFSETS.map((minutes) => (
+                    <ReminderButton
+                      key={minutes}
+                      active={form.reminder?.type === 'offset' && form.reminder.offsetMinutes === minutes}
+                      label={`${minutes} min`}
+                      disabled={!form.dueDate || !form.dueTime}
+                      onClick={() => update('reminder', { type: 'offset', offsetMinutes: minutes, ...(form.reminder?.notificationId ? { notificationId: form.reminder.notificationId } : {}) })}
+                    />
+                  ))}
+                  <ReminderButton
+                    active={form.reminder?.type === 'custom'}
+                    label="Custom"
+                    disabled={!form.dueDate || !form.dueTime}
+                    onClick={() => update('reminder', {
+                      type: 'custom', customDate: form.dueDate, customTime: '',
+                      ...(form.reminder?.notificationId ? { notificationId: form.reminder.notificationId } : {})
+                    })}
+                  />
+                </div>
+                {!form.dueDate || !form.dueTime ? (
+                  <p className="mt-2 text-xs leading-relaxed text-slate-400">Add a deadline date and time to enable reminders.</p>
+                ) : form.reminder?.type === 'custom' ? (
+                  <div className="mt-3 grid grid-cols-[1fr_.8fr] gap-3">
+                    <input type="date" className="field" value={form.reminder.customDate || ''} onChange={(e) => update('reminder', { ...form.reminder, customDate: e.target.value })} aria-label="Custom reminder date" />
+                    <input type="time" className="field" value={form.reminder.customTime || ''} onChange={(e) => update('reminder', { ...form.reminder, customTime: e.target.value })} aria-label="Custom reminder time" />
+                  </div>
+                ) : null}
+              </div>
+            )}
 
             <div>
               <span className="label">Priority</span>
@@ -120,10 +183,14 @@ export default function TaskFormModal({ open, task, initialDate, onClose, onSave
           </div>
 
           <footer className="sticky bottom-0 border-t border-slate-100 bg-white/90 p-5 backdrop-blur-xl dark:border-white/[.06] dark:bg-[#1b1a23]/90 safe-bottom">
-            <button type="submit" className="primary-button w-full"><Check size={19} />{editing ? 'Save changes' : 'Create task'}</button>
+            <button type="submit" disabled={saving} className="primary-button w-full disabled:opacity-60"><Check size={19} />{saving ? 'Saving…' : editing ? 'Save changes' : 'Create task'}</button>
           </footer>
         </form>
       </section>
     </div>
   )
+}
+
+function ReminderButton({ active, label, disabled = false, onClick }) {
+  return <button type="button" disabled={disabled} onClick={onClick} className={`min-h-11 rounded-2xl border px-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${active ? 'accent-border accent-soft' : 'border-slate-200 text-slate-500 dark:border-white/[.08] dark:text-slate-400'}`}>{label}</button>
 }
