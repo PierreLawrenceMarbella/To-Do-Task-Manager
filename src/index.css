@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #222130;
+  background: #f7f7fb;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  --accent: #6d5dfc;
+  --accent-rgb: 109, 93, 252;
+  color-scheme: light;
+}
+
+:root.dark {
+  color: #f4f3fb;
+  background: #111118;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  min-height: 100%;
+  background: #f7f7fb;
+  overscroll-behavior: none;
+}
+
+html.dark { background: #111118; }
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 92% -4%, rgba(var(--accent-rgb), .11), transparent 27rem),
+    #f7f7fb;
+}
+
+.dark body {
+  background:
+    radial-gradient(circle at 92% -4%, rgba(var(--accent-rgb), .16), transparent 27rem),
+    #111118;
+}
+
+button, input, textarea, select { font: inherit; }
+button { touch-action: manipulation; }
+
+::selection { background: rgba(var(--accent-rgb), .22); }
+
+@layer components {
+  .surface {
+    @apply border border-slate-200/70 bg-white dark:border-white/[.07] dark:bg-[#1b1a23];
+  }
+
+  .card {
+    @apply surface rounded-[1.45rem] shadow-soft;
+  }
+
+  .icon-button {
+    @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-slate-500 transition active:scale-95 dark:text-slate-300;
+  }
+
+  .field {
+    @apply w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-[15px] text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-transparent focus:ring-2 dark:border-white/[.08] dark:bg-white/[.045] dark:text-white dark:placeholder:text-slate-500;
+    --tw-ring-color: rgba(var(--accent-rgb), .35);
+  }
+
+  .label {
+    @apply mb-2 block text-[13px] font-semibold text-slate-600 dark:text-slate-300;
+  }
+
+  .primary-button {
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-5 font-semibold text-white shadow-lift transition active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50;
+    background: var(--accent);
+  }
+
+  .secondary-button {
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 font-semibold text-slate-700 transition active:scale-[.98] dark:border-white/[.08] dark:bg-white/[.04] dark:text-slate-200;
+  }
+}
+
+.accent-text { color: var(--accent); }
+.accent-bg { background: var(--accent); }
+.accent-soft { background: rgba(var(--accent-rgb), .1); color: var(--accent); }
+.accent-border { border-color: rgba(var(--accent-rgb), .25); }
+
+.safe-top { padding-top: max(1.25rem, env(safe-area-inset-top)); }
+.safe-bottom { padding-bottom: max(.75rem, env(safe-area-inset-bottom)); }
+.app-bottom-space { padding-bottom: calc(7.25rem + env(safe-area-inset-bottom)); }
+
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
+.calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+
+@media (min-width: 768px) {
+  body { background-color: #ececf3; }
+  .dark body { background-color: #0b0b10; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
